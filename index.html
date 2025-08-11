@@ -17,6 +17,9 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgo8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojNjY3ZWVhO3N0b3Atb3BhY2l0eToxIiAvPgo8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM3NjRiYTI7c3RvcC1vcGFjaXR5OjEiIC8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIHJ4PSIyNCIgZmlsbD0idXJsKCNncmFkKSIvPgo8cGF0aCBkPSJNOTYgNDhMMTEyIDgwSDEyOEw5NiAxMTJMNjQgODBIODBMOTYgNDhaIiBmaWxsPSIjRkZENzAwIi8+Cjx0ZXh0IHg9Ijk2IiB5PSIxNTYiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7lrabkuaDlj7jog4U8L3RleHQ+Cjwvc3ZnPgo=">
 </head>
 <body>
+    <!-- 背景粒子效果 -->
+    <div class="particles-container" id="particlesContainer"></div>
+    
     <div class="app-container">
         <!-- Header -->
         <header class="header">
@@ -42,8 +45,13 @@
         <main class="main-content">
             <!-- AI Prompt Section -->
             <section class="prompt-section">
-                <h2><i class="fas fa-robot"></i> AI 学习助手</h2>
-                <div class="prompt-card">
+                <div class="section-header-toggle" onclick="togglePromptSection()">
+                    <h2><i class="fas fa-robot"></i> AI 学习助手</h2>
+                    <button class="toggle-btn" id="promptToggleBtn">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="prompt-card collapsed" id="promptCard">
                     <p class="prompt-description">复制下面的提示词到 ChatGPT，让 AI 帮你制定学习计划：</p>
                     <div class="prompt-box">
                         <div class="prompt-text" id="promptText">
