@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习勇者 - 游戏化任务管理</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="学习勇者">
+    <meta name="description" content="一个专为学习而设计的游戏化任务管理应用，让学习变得更有趣、更有动力！">
+    <meta name="keywords" content="学习,任务管理,游戏化,番茄钟,AI助手,励志,学习工具">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgo8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojNjY3ZWVhO3N0b3Atb3BhY2l0eToxIiAvPgo8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM3NjRiYTI7c3RvcC1vcGFjaXR5OjEiIC8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIHJ4PSIyNCIgZmlsbD0idXJsKCNncmFkKSIvPgo8cGF0aCBkPSJNOTYgNDhMMTEyIDgwSDEyOEw5NiAxMTJMNjQgODBIODBMOTYgNDhaIiBmaWxsPSIjRkZENzAwIi8+Cjx0ZXh0IHg9Ijk2IiB5PSIxNTYiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7lrabkuaDlj7jog4U8L3RleHQ+Cjwvc3ZnPgo=">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="app-title">
+                    <i class="fas fa-trophy"></i>
+                    学习勇者
+                </h1>
+                <div class="user-stats">
+                    <div class="stat">
+                        <i class="fas fa-star"></i>
+                        <span id="totalPoints">0</span>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-fire"></i>
+                        <span id="streak">0</span>天
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- AI Prompt Section -->
+            <section class="prompt-section">
+                <h2><i class="fas fa-robot"></i> AI 学习助手</h2>
+                <div class="prompt-card">
+                    <p class="prompt-description">复制下面的提示词到 ChatGPT，让 AI 帮你制定学习计划：</p>
+                    <div class="prompt-box">
+                        <div class="prompt-text" id="promptText">
+请帮我将学习内容分解为小任务，就像游戏任务一样。请按以下格式输出：
+
+```
+大任务名称
+- 小任务1
+- 小任务2
+- 小任务3
+----
+大任务名称2
+- 小任务1
+- 小任务2
+----
+```
+
+每个小任务应该：
+1. 明确具体，可在15-30分钟内完成
+2. 有明确的完成标准
+3. 循序渐进，由简到难
+4. 让人有成就感
+
+我要学习的内容是：[在这里输入你的学习内容]
+                        </div>
+                        <button class="copy-btn" onclick="copyPrompt()">
+                            <i class="fas fa-copy"></i>
+                            复制提示词
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Import Tasks Section -->
+            <section class="import-section">
+                <h2><i class="fas fa-download"></i> 导入学习任务</h2>
+                <div class="import-card">
+                    <textarea 
+                        id="importText" 
+                        placeholder="将 AI 生成的任务列表粘贴到这里..."
+                        rows="6"
+                    ></textarea>
+                    <button class="import-btn" onclick="importTasks()">
+                        <i class="fas fa-magic"></i>
+                        开始学习冒险
+                    </button>
+                </div>
+            </section>
+
+            <!-- Motivational Quote -->
+            <div class="motivation-card">
+                <i class="fas fa-quote-left"></i>
+                <p class="motivation-text" id="motivationText">每一步都是进步，每一刻都在成长！</p>
+                <button class="refresh-quote" onclick="refreshQuote()">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+
+            <!-- Tasks Display -->
+            <section class="tasks-section" id="tasksSection" style="display: none;">
+                <div class="section-header">
+                    <h2><i class="fas fa-tasks"></i> 学习任务</h2>
+                    <div class="pomodoro-controls">
+                        <button id="pomodoroBtn" onclick="togglePomodoro()">
+                            <i class="fas fa-clock"></i>
+                            <span id="pomodoroTime">25:00</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tasks-container" id="tasksContainer">
+                    <!-- Tasks will be dynamically generated here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Achievement Modal -->
+        <div class="achievement-modal" id="achievementModal">
+            <div class="achievement-content">
+                <div class="achievement-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <h3 id="achievementTitle">任务完成！</h3>
+                <p id="achievementMessage">你又向目标迈进了一步！</p>
+                <div class="achievement-points">
+                    +<span id="achievementPoints">10</span> 经验值
+                </div>
+                <button onclick="closeAchievement()">继续战斗！</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="successSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUgBSuH0PLNeCsFJHfK8N+SQwoUX7fq7aJQDAg+md7zv2QcBzSM0fPVeSsFJHnN8ORQDAg+mtzzv2QcBzSM0fPVe" type="audio/wav">
+    </audio>
+    
+    <script src="script.js"></script>
+</body>
+</html>
