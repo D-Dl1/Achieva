@@ -4,9 +4,13 @@ class LearningHero {
         this.tasks = [];
         this.totalPoints = parseInt(localStorage.getItem('totalPoints')) || 0;
         this.streak = parseInt(localStorage.getItem('streak')) || 0;
+        this.completedTasksCount = parseInt(localStorage.getItem('completedTasksCount')) || 0;
         this.pomodoroTimer = null;
         this.pomodoroTime = 25 * 60; // 25分钟
         this.isPomodoroRunning = false;
+        this.isBreakTime = false;
+        this.breakTime = 5 * 60; // 5分钟休息
+        this.pomodoroSessions = parseInt(localStorage.getItem('pomodoroSessions')) || 0;
         this.motivationalQuotes = [
             "每一步都是进步，每一刻都在成长！",
             "学习就像升级，每一天都在变强！",
@@ -44,6 +48,9 @@ class LearningHero {
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.key === 'Enter') {
                 this.importTasks();
+            }
+            if (e.key === 'Enter' && document.activeElement.id === 'quickTaskInput') {
+                this.addQuickTask();
             }
         });
     }
@@ -301,23 +308,32 @@ class LearningHero {
         // 添加完成动画
         const taskElement = document.querySelector(`[onclick="learningHero.toggleTask('${groupId}', '${taskId}')"]`);
         if (taskElement) {
-            taskElement.style.animation = 'pulse 0.6s ease-in-out';
+            taskElement.style.animation = 'completePulse 0.8s ease-out';
+            taskElement.style.transform = 'scale(1.05)';
             setTimeout(() => {
                 taskElement.style.animation = '';
-            }, 600);
+                taskElement.style.transform = '';
+            }, 800);
         }
         
         task.completed = true;
         this.totalPoints += task.points;
+        this.completedTasksCount++;
         
         // 播放成功音效
         this.playSound('success');
+        
+        // 创建庆祝粒子效果
+        this.createCelebrationParticles();
         
         // 动画更新统计数据
         this.animateStatUpdate();
         
         // 显示成就弹窗
         this.showAchievement(task.text, task.points);
+        
+        // 更新连击数
+        this.updateStreak();
         
         // 更新UI
         this.saveTasks();
@@ -329,8 +345,12 @@ class LearningHero {
         const completedTasks = group.tasks.filter(t => t.completed).length;
         if (completedTasks === group.tasks.length) {
             setTimeout(() => {
+                this.createFireworks();
                 this.showAchievement(`🎉 恭喜完成任务组：${group.title}`, 50);
-                this.playSound('achievement');
+                this.totalPoints += 50;
+                this.saveStats();
+                this.updateStats();
+                this.playSound('levelup');
             }, 1000);
         }
         
@@ -404,6 +424,53 @@ class LearningHero {
     completePomodoroSession() {
         this.isPomodoroRunning = false;
         clearInterval(this.pomodoroTimer);
+        
+        if (!this.isBreakTime) {
+            // 完成工作番茄钟，开始休息
+            this.pomodoroSessions++;
+            localStorage.setItem('pomodoroSessions', this.pomodoroSessions.toString());
+            
+            this.showAchievement('🍅 番茄钟完成！', 25);
+            this.totalPoints += 25;
+            this.saveStats();
+            this.updateStats();
+            this.playSound('levelup');
+            this.createCelebrationParticles();
+            
+            // 自动开始休息时间
+            this.startBreakTime();
+        } else {
+            // 休息时间结束
+            this.showNotification('🎯 休息结束！准备好开始新的番茄钟了吗？', 'info');
+            this.resetPomodoro();
+        }
+    }
+
+    startBreakTime() {
+        this.isBreakTime = true;
+        this.pomodoroTime = this.breakTime;
+        this.isPomodoroRunning = true;
+        
+        const btn = document.getElementById('pomodoroBtn');
+        btn.innerHTML = '<i class="fas fa-coffee"></i> <span id="pomodoroTime">05:00</span>';
+        btn.style.background = 'linear-gradient(45deg, #00b894, #55a3ff)';
+        
+        this.pomodoroTimer = setInterval(() => {
+            this.pomodoroTime--;
+            this.updatePomodoroDisplay();
+            
+            if (this.pomodoroTime <= 0) {
+                this.completePomodoroSession();
+            }
+        }, 1000);
+        
+        this.showNotification('☕ 休息时间开始！放松5分钟', 'success');
+        this.updatePomodoroDisplay();
+    }
+
+    resetPomodoro() {
+        this.isBreakTime = false;
+        this.isPomodoroRunning = false;
         this.pomodoroTime = 25 * 60;
         
         const btn = document.getElementById('pomodoroBtn');
@@ -411,13 +478,6 @@ class LearningHero {
         btn.style.background = 'linear-gradient(45deg, #667eea, #764ba2)';
         
         this.updatePomodoroDisplay();
-        this.showAchievement('🍅 番茄钟完成！', 25);
-        this.totalPoints += 25;
-        this.saveStats();
-        this.updateStats();
-        this.playSound('levelup');
-        
-        this.showNotification('🎉 恭喜完成一个番茄钟！休息5分钟吧~', 'success');
     }
 
     updatePomodoroDisplay() {
@@ -427,10 +487,62 @@ class LearningHero {
         document.getElementById('pomodoroTime').textContent = timeStr;
     }
 
+    // 快速任务功能
+    addQuickTask() {
+        const input = document.getElementById('quickTaskInput');
+        const taskText = input.value.trim();
+        
+        if (!taskText) {
+            this.showNotification('请输入任务内容！', 'warning');
+            return;
+        }
+        
+        // 创建快速任务
+        const quickTask = {
+            id: Date.now(),
+            title: '快速任务',
+            subtasks: [{
+                id: Date.now() + 1,
+                text: taskText,
+                completed: false,
+                points: 15
+            }]
+        };
+        
+        this.tasks.push(quickTask);
+        this.saveTasks();
+        this.displayTasks();
+        
+        // 清空输入框并添加视觉反馈
+        input.value = '';
+        this.showNotification(`✨ 快速任务"${taskText}"已创建！`, 'success');
+        this.playSound('success');
+        
+        // 显示任务区域
+        const tasksSection = document.getElementById('tasksSection');
+        tasksSection.style.display = 'block';
+        
+        // 滚动到任务区域
+        tasksSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    setQuickTask(taskText) {
+        const input = document.getElementById('quickTaskInput');
+        input.value = taskText;
+        input.focus();
+        
+        // 添加输入动画
+        input.style.background = 'rgba(255, 193, 7, 0.2)';
+        setTimeout(() => {
+            input.style.background = 'rgba(255, 255, 255, 0.1)';
+        }, 300);
+    }
+
     // 更新统计数据
     updateStats() {
         document.getElementById('totalPoints').textContent = this.totalPoints;
         document.getElementById('streak').textContent = this.streak;
+        document.getElementById('completedTasks').textContent = this.completedTasksCount;
     }
 
     // 更新连续学习天数
@@ -534,6 +646,55 @@ class LearningHero {
     closeAchievement() {
         const modal = document.getElementById('achievementModal');
         modal.classList.remove('show');
+        this.playSound('success');
+        
+        // 添加点击效果和动画
+        const button = event ? event.target : null;
+        if (button) {
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                button.style.transform = '';
+            }, 150);
+        }
+        
+        // 添加一些庆祝粒子效果
+        this.createCelebrationParticles();
+    }
+
+    // 创建庆祝粒子效果
+    createCelebrationParticles() {
+        const colors = ['#ffd700', '#ff6b6b', '#4facfe', '#00b894', '#a29bfe'];
+        
+        for (let i = 0; i < 8; i++) {
+            setTimeout(() => {
+                const particle = document.createElement('div');
+                particle.style.position = 'fixed';
+                particle.style.left = '50%';
+                particle.style.top = '50%';
+                particle.style.width = '6px';
+                particle.style.height = '6px';
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.borderRadius = '50%';
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '10000';
+                
+                const angle = (i / 8) * 2 * Math.PI;
+                const distance = 100 + Math.random() * 50;
+                const endX = Math.cos(angle) * distance;
+                const endY = Math.sin(angle) * distance;
+                
+                particle.style.transform = `translate(-50%, -50%)`;
+                document.body.appendChild(particle);
+                
+                particle.animate([
+                    { transform: `translate(-50%, -50%) scale(1)`, opacity: 1 },
+                    { transform: `translate(calc(-50% + ${endX}px), calc(-50% + ${endY}px)) scale(0)`, opacity: 0 }
+                ], {
+                    duration: 600,
+                    easing: 'ease-out'
+                }).onfinish = () => particle.remove();
+            }, i * 50);
+        }
     }
 
     // 创建烟花效果
@@ -879,6 +1040,7 @@ class LearningHero {
     saveStats() {
         localStorage.setItem('totalPoints', this.totalPoints.toString());
         localStorage.setItem('streak', this.streak.toString());
+        localStorage.setItem('completedTasksCount', this.completedTasksCount.toString());
     }
 
     // 清除所有数据（重置功能）
@@ -912,6 +1074,14 @@ function refreshQuote() {
 
 function togglePomodoro() {
     learningHero.togglePomodoro();
+}
+
+function addQuickTask() {
+    learningHero.addQuickTask();
+}
+
+function setQuickTask(taskText) {
+    learningHero.setQuickTask(taskText);
 }
 
 function closeAchievement() {

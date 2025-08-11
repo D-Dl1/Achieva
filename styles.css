@@ -211,6 +211,86 @@ section h2 i {
     position: relative;
 }
 
+/* Quick Task Section */
+.quick-task-card {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 193, 7, 0.1));
+    border: 1px solid rgba(255, 193, 7, 0.2);
+    border-radius: 24px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.quick-task-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(255, 193, 7, 0.2);
+}
+
+.quick-task-input {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.quick-task-input input {
+    flex: 1;
+    padding: 0.8rem 1rem;
+    border: 2px solid rgba(255, 193, 7, 0.3);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.quick-task-input input:focus {
+    outline: none;
+    border-color: #ffc107;
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.1);
+}
+
+.quick-add-btn {
+    background: linear-gradient(45deg, #ffc107, #ff8f00);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+}
+
+.quick-add-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+}
+
+.quick-task-suggestions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.suggestion {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--text-color);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.suggestion:hover {
+    background: rgba(255, 193, 7, 0.3);
+    transform: translateY(-1px);
+}
+
 .prompt-card.collapsed {
     max-height: 0;
     padding: 0 2rem;
@@ -740,6 +820,22 @@ section h2 i {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes completePulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(139, 195, 74, 0.2));
+    }
+    100% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
     }
 }
 

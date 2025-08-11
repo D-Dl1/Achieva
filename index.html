@@ -37,6 +37,10 @@
                         <i class="fas fa-fire"></i>
                         <span id="streak">0</span>天
                     </div>
+                    <div class="stat">
+                        <i class="fas fa-check-circle"></i>
+                        <span id="completedTasks">0</span>
+                    </div>
                 </div>
             </div>
         </header>
@@ -81,6 +85,29 @@
                             <i class="fas fa-copy"></i>
                             复制提示词
                         </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Task Section -->
+            <section class="quick-task-section">
+                <h2><i class="fas fa-zap"></i> 快速任务</h2>
+                <div class="quick-task-card">
+                    <div class="quick-task-input">
+                        <input 
+                            type="text" 
+                            id="quickTaskInput" 
+                            placeholder="添加一个快速任务（如：看书15分钟）..."
+                            maxlength="50"
+                        >
+                        <button class="quick-add-btn" onclick="addQuickTask()">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="quick-task-suggestions">
+                        <span class="suggestion" onclick="setQuickTask('阅读15分钟')">📚 阅读15分钟</span>
+                        <span class="suggestion" onclick="setQuickTask('做10道练习题')">✏️ 做10道练习题</span>
+                        <span class="suggestion" onclick="setQuickTask('复习笔记20分钟')">📝 复习笔记20分钟</span>
                     </div>
                 </div>
             </section>
