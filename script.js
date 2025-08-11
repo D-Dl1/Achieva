@@ -25,6 +25,7 @@ class LearningHero {
             "每一次学习都是对自己的投资！"
         ];
         
+        this.taskHoverHandler = () => this.playSound('hover');
         this.init();
     }
 
@@ -34,6 +35,8 @@ class LearningHero {
         this.loadTasks();
         this.setupEventListeners();
         this.checkStreak();
+        this.setupSoundEffects();
+        this.createBackgroundParticles();
     }
 
     setupEventListeners() {
@@ -43,6 +46,98 @@ class LearningHero {
                 this.importTasks();
             }
         });
+    }
+
+    setupSoundEffects() {
+        // 为所有按钮添加悬停音效
+        const buttons = document.querySelectorAll('button, .task-item');
+        buttons.forEach(button => {
+            button.addEventListener('mouseenter', () => {
+                this.playSound('hover');
+            });
+        });
+
+        // 为卡片添加悬停音效
+        const cards = document.querySelectorAll('.prompt-card, .import-card, .motivation-card');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                setTimeout(() => this.playSound('hover'), 100);
+            });
+        });
+    }
+
+    // 创建背景粒子效果
+    createBackgroundParticles() {
+        const container = document.getElementById('particlesContainer');
+        const particleCount = 20;
+        
+        for (let i = 0; i < particleCount; i++) {
+            this.createParticle(container);
+        }
+        
+        // 定期添加新粒子
+        setInterval(() => {
+            this.createParticle(container);
+        }, 3000);
+    }
+
+    createParticle(container) {
+        const particle = document.createElement('div');
+        particle.className = Math.random() > 0.5 ? 'particle star' : 'particle bubble';
+        
+        // 随机位置和大小
+        const size = Math.random() * 6 + 2; // 2-8px
+        const startX = Math.random() * window.innerWidth;
+        const duration = Math.random() * 10 + 15; // 15-25秒
+        
+        particle.style.cssText = `
+            left: ${startX}px;
+            width: ${size}px;
+            height: ${size}px;
+            animation-duration: ${duration}s;
+            animation-delay: ${Math.random() * 5}s;
+        `;
+        
+        container.appendChild(particle);
+        
+        // 动画结束后移除粒子
+        setTimeout(() => {
+            if (container.contains(particle)) {
+                container.removeChild(particle);
+            }
+        }, (duration + 5) * 1000);
+    }
+
+    // 创建庆祝粒子效果
+    createCelebrationParticles() {
+        const colors = ['#ff6b6b', '#4facfe', '#ffd700', '#00b894', '#a29bfe', '#fd79a8'];
+        const container = document.body;
+        
+        for (let i = 0; i < 30; i++) {
+            setTimeout(() => {
+                const particle = document.createElement('div');
+                particle.style.cssText = `
+                    position: fixed;
+                    left: ${Math.random() * window.innerWidth}px;
+                    top: -10px;
+                    width: ${Math.random() * 8 + 4}px;
+                    height: ${Math.random() * 8 + 4}px;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    pointer-events: none;
+                    z-index: 10000;
+                    border-radius: 50%;
+                    animation: confetti 3s linear forwards;
+                `;
+                
+                container.appendChild(particle);
+                
+                setTimeout(() => {
+                    if (container.contains(particle)) {
+                        container.removeChild(particle);
+                    }
+                }, 3000);
+            }, i * 50);
+        }
     }
 
     // 复制AI提示词
@@ -139,6 +234,18 @@ class LearningHero {
             const groupElement = this.createTaskGroupElement(group);
             container.appendChild(groupElement);
         });
+        
+        // 重新绑定音效到新创建的任务项
+        this.bindTaskItemSounds();
+    }
+
+    // 为任务项绑定音效
+    bindTaskItemSounds() {
+        const taskItems = document.querySelectorAll('.task-item');
+        taskItems.forEach(item => {
+            item.removeEventListener('mouseenter', this.taskHoverHandler);
+            item.addEventListener('mouseenter', this.taskHoverHandler);
+        });
     }
 
     // 创建任务组元素
@@ -191,11 +298,23 @@ class LearningHero {
         
         if (task.completed) return; // 已完成的任务不能取消
         
+        // 添加完成动画
+        const taskElement = document.querySelector(`[onclick="learningHero.toggleTask('${groupId}', '${taskId}')"]`);
+        if (taskElement) {
+            taskElement.style.animation = 'pulse 0.6s ease-in-out';
+            setTimeout(() => {
+                taskElement.style.animation = '';
+            }, 600);
+        }
+        
         task.completed = true;
         this.totalPoints += task.points;
         
         // 播放成功音效
         this.playSound('success');
+        
+        // 动画更新统计数据
+        this.animateStatUpdate();
         
         // 显示成就弹窗
         this.showAchievement(task.text, task.points);
@@ -211,12 +330,25 @@ class LearningHero {
         if (completedTasks === group.tasks.length) {
             setTimeout(() => {
                 this.showAchievement(`🎉 恭喜完成任务组：${group.title}`, 50);
-                this.playSound('levelup');
+                this.playSound('achievement');
             }, 1000);
         }
         
         // 更新连续学习天数
         this.updateStreak();
+    }
+
+    // 动画更新统计数据
+    animateStatUpdate() {
+        const pointsElement = document.getElementById('totalPoints');
+        const streakElement = document.getElementById('streak');
+        
+        [pointsElement, streakElement].forEach(element => {
+            element.style.animation = 'pulse 0.5s ease-in-out';
+            setTimeout(() => {
+                element.style.animation = '';
+            }, 500);
+        });
     }
 
     // 显示任务区域
@@ -359,12 +491,43 @@ class LearningHero {
         const modal = document.getElementById('achievementModal');
         document.getElementById('achievementTitle').textContent = '任务完成！';
         document.getElementById('achievementMessage').textContent = title;
-        document.getElementById('achievementPoints').textContent = points;
         
         modal.classList.add('show');
         
-        // 创建烟花效果
+        // 动画显示点数
+        this.animatePoints(points);
+        
+        // 创建烟花效果和庆祝粒子
         this.createFireworks();
+        this.createCelebrationParticles();
+    }
+
+    // 动画显示点数
+    animatePoints(targetPoints) {
+        const pointsElement = document.getElementById('achievementPoints');
+        const duration = 1000; // 1秒
+        const startTime = Date.now();
+        
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // 使用缓动函数
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const currentPoints = Math.floor(targetPoints * easeOut);
+            
+            pointsElement.textContent = currentPoints;
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                pointsElement.textContent = targetPoints;
+                // 添加闪烁效果
+                pointsElement.style.animation = 'pulse 0.5s ease-in-out 3';
+            }
+        };
+        
+        animate();
     }
 
     // 关闭成就弹窗
@@ -422,55 +585,220 @@ class LearningHero {
     // 播放音效
     playSound(type) {
         try {
-            // 创建简单的音频提示
+            // 创建音频上下文
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // 根据音效类型播放不同的音频
+            switch (type) {
+                case 'success':
+                    this.playSuccessChord(audioContext);
+                    break;
+                case 'levelup':
+                    this.playLevelUpMelody(audioContext);
+                    break;
+                case 'copy':
+                    this.playClickSound(audioContext);
+                    break;
+                case 'refresh':
+                    this.playRefreshSound(audioContext);
+                    break;
+                case 'start':
+                    this.playStartFanfare(audioContext);
+                    break;
+                case 'achievement':
+                    this.playAchievementSound(audioContext);
+                    break;
+                case 'hover':
+                    this.playHoverSound(audioContext);
+                    break;
+                default:
+                    this.playDefaultSound(audioContext);
+            }
+        } catch (error) {
+            // 音频播放失败时静默处理
+            console.log('Audio not supported');
+        }
+    }
+
+    // 成功和弦音效
+    playSuccessChord(audioContext) {
+        const frequencies = [523.25, 659.25, 783.99]; // C5, E5, G5 - 大三和弦
+        const duration = 0.4;
+        
+        frequencies.forEach((freq, index) => {
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
             
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
             
-            let frequency;
-            let duration;
+            oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+            oscillator.type = 'triangle';
             
-            switch (type) {
-                case 'success':
-                    frequency = 523.25; // C5
-                    duration = 0.3;
-                    break;
-                case 'levelup':
-                    frequency = 659.25; // E5
-                    duration = 0.5;
-                    break;
-                case 'copy':
-                    frequency = 440; // A4
-                    duration = 0.2;
-                    break;
-                case 'refresh':
-                    frequency = 349.23; // F4
-                    duration = 0.15;
-                    break;
-                case 'start':
-                    frequency = 392; // G4
-                    duration = 0.25;
-                    break;
-                default:
-                    frequency = 261.63; // C4
-                    duration = 0.2;
-            }
-            
-            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.08, audioContext.currentTime + 0.05);
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
             
-            oscillator.start(audioContext.currentTime);
+            oscillator.start(audioContext.currentTime + index * 0.1);
             oscillator.stop(audioContext.currentTime + duration);
-        } catch (error) {
-            // 音频播放失败时静默处理
-            console.log('Audio not supported');
-        }
+        });
+    }
+
+    // 升级旋律音效
+    playLevelUpMelody(audioContext) {
+        const melody = [523.25, 587.33, 659.25, 698.46, 783.99]; // C5-D5-E5-F5-G5
+        const noteDuration = 0.15;
+        
+        melody.forEach((freq, index) => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+            oscillator.type = 'square';
+            
+            const startTime = audioContext.currentTime + index * noteDuration;
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(0.1, startTime + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + noteDuration);
+            
+            oscillator.start(startTime);
+            oscillator.stop(startTime + noteDuration);
+        });
+    }
+
+    // 点击音效
+    playClickSound(audioContext) {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+    }
+
+    // 刷新音效
+    playRefreshSound(audioContext) {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+        oscillator.frequency.linearRampToValueAtTime(600, audioContext.currentTime + 0.1);
+        oscillator.frequency.linearRampToValueAtTime(350, audioContext.currentTime + 0.2);
+        oscillator.type = 'sawtooth';
+        
+        gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+    }
+
+    // 开始音效
+    playStartFanfare(audioContext) {
+        const notes = [
+            { freq: 392, time: 0, duration: 0.2 },      // G4
+            { freq: 523.25, time: 0.1, duration: 0.2 }, // C5
+            { freq: 659.25, time: 0.2, duration: 0.3 }  // E5
+        ];
+        
+        notes.forEach(note => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(note.freq, audioContext.currentTime);
+            oscillator.type = 'triangle';
+            
+            const startTime = audioContext.currentTime + note.time;
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(0.12, startTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + note.duration);
+            
+            oscillator.start(startTime);
+            oscillator.stop(startTime + note.duration);
+        });
+    }
+
+    // 成就音效
+    playAchievementSound(audioContext) {
+        // 播放更华丽的成就音效
+        const chord1 = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+        const chord2 = [587.33, 739.99, 880, 1174.66];   // D5, F#5, A5, D6
+        
+        [chord1, chord2].forEach((chord, chordIndex) => {
+            chord.forEach((freq, noteIndex) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                oscillator.type = 'triangle';
+                
+                const startTime = audioContext.currentTime + chordIndex * 0.3;
+                gainNode.gain.setValueAtTime(0, startTime);
+                gainNode.gain.linearRampToValueAtTime(0.06, startTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.8);
+                
+                oscillator.start(startTime);
+                oscillator.stop(startTime + 0.8);
+            });
+        });
+    }
+
+    // 悬停音效
+    playHoverSound(audioContext) {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+        oscillator.frequency.linearRampToValueAtTime(550, audioContext.currentTime + 0.05);
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.03, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.05);
+    }
+
+    // 默认音效
+    playDefaultSound(audioContext) {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
     }
 
     // 显示通知
@@ -588,6 +916,17 @@ function togglePomodoro() {
 
 function closeAchievement() {
     learningHero.closeAchievement();
+}
+
+function togglePromptSection() {
+    const promptCard = document.getElementById('promptCard');
+    const toggleBtn = document.getElementById('promptToggleBtn');
+    
+    promptCard.classList.toggle('collapsed');
+    toggleBtn.classList.toggle('rotated');
+    
+    // 播放切换音效
+    learningHero.playSound('refresh');
 }
 
 // 初始化应用
