@@ -1,0 +1,33 @@
+{
+  "name": "learning-hero",
+  "version": "1.0.0",
+  "description": "一个专为学习而设计的游戏化任务管理应用",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8080",
+    "dev": "python -m http.server 8080",
+    "build": "echo 'No build step needed for static site'",
+    "deploy": "echo 'Copy all files to your web server'",
+    "zip": "zip -r learning-hero.zip *.html *.css *.js *.json *.md -x node_modules/\\*"
+  },
+  "keywords": [
+    "learning",
+    "productivity",
+    "gamification",
+    "pomodoro",
+    "task-management",
+    "education"
+  ],
+  "author": "AI Assistant",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/learning-hero.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/learning-hero/issues"
+  },
+  "homepage": "https://yourusername.github.io/learning-hero",
+  "devDependencies": {},
+  "dependencies": {}
+}
