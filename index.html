@@ -29,6 +29,19 @@
                     学习勇者
                 </h1>
                 <div class="user-stats">
+                    <!-- 角色等级和经验 -->
+                    <div class="stat character-level">
+                        <i class="fas fa-crown"></i>
+                        <div class="level-info">
+                            <span>Lv.<span id="heroLevel">1</span></span>
+                            <div class="exp-bar-container">
+                                <div class="exp-bar" id="expBar"></div>
+                                <span class="exp-text" id="heroExp">0/100</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 传统统计 -->
                     <div class="stat">
                         <i class="fas fa-star"></i>
                         <span id="totalPoints">0</span>
@@ -47,6 +60,55 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- 角色面板 -->
+            <section class="character-panel" id="characterPanel">
+                <div class="character-avatar">
+                    <div class="avatar-image">🦸‍♂️</div>
+                    <div class="character-name">学习勇者</div>
+                </div>
+                
+                <div class="skills-grid">
+                    <div class="skill-item">
+                        <div class="skill-icon">🎯</div>
+                        <div class="skill-info">
+                            <span class="skill-name">专注</span>
+                            <span class="skill-level" id="skillFocus">1</span>
+                        </div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-icon">💪</div>
+                        <div class="skill-info">
+                            <span class="skill-name">耐力</span>
+                            <span class="skill-level" id="skillEndurance">1</span>
+                        </div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-icon">🧠</div>
+                        <div class="skill-info">
+                            <span class="skill-name">知识</span>
+                            <span class="skill-level" id="skillKnowledge">1</span>
+                        </div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-icon">✨</div>
+                        <div class="skill-info">
+                            <span class="skill-name">创造</span>
+                            <span class="skill-level" id="skillCreativity">1</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="achievements-preview">
+                    <div class="achievements-title">
+                        <i class="fas fa-trophy"></i>
+                        最新成就
+                    </div>
+                    <div class="achievements-list" id="achievementsList">
+                        <div class="achievement-badge">🌟 新手上路</div>
+                    </div>
+                </div>
+            </section>
+
             <!-- AI Prompt Section -->
             <section class="prompt-section">
                 <div class="section-header-toggle" onclick="togglePromptSection()">
