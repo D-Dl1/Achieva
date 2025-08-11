@@ -1,15 +1,48 @@
-// 游戏化学习任务管理应用
+// 游戏化学习任务管理应用 - 完全重构版本
 class LearningHero {
     constructor() {
         this.tasks = [];
+        
+        // 角色系统
+        this.character = {
+            level: parseInt(localStorage.getItem('heroLevel')) || 1,
+            experience: parseInt(localStorage.getItem('heroExp')) || 0,
+            expToNext: this.calculateExpToNext(parseInt(localStorage.getItem('heroLevel')) || 1),
+            health: 100,
+            maxHealth: 100,
+            mana: 50,
+            maxMana: 50,
+            avatar: localStorage.getItem('heroAvatar') || 'warrior'
+        };
+        
+        // 技能系统
+        this.skills = {
+            focus: parseInt(localStorage.getItem('skillFocus')) || 1,
+            endurance: parseInt(localStorage.getItem('skillEndurance')) || 1,
+            knowledge: parseInt(localStorage.getItem('skillKnowledge')) || 1,
+            creativity: parseInt(localStorage.getItem('skillCreativity')) || 1
+        };
+        
+        // 装备系统
+        this.equipment = {
+            weapon: localStorage.getItem('equipWeapon') || null,
+            armor: localStorage.getItem('equipArmor') || null,
+            accessory: localStorage.getItem('equipAccessory') || null
+        };
+        
+        // 成就系统
+        this.achievements = JSON.parse(localStorage.getItem('achievements')) || {};
+        this.badges = JSON.parse(localStorage.getItem('badges')) || [];
+        
+        // 传统数据保持兼容
         this.totalPoints = parseInt(localStorage.getItem('totalPoints')) || 0;
         this.streak = parseInt(localStorage.getItem('streak')) || 0;
         this.completedTasksCount = parseInt(localStorage.getItem('completedTasksCount')) || 0;
         this.pomodoroTimer = null;
-        this.pomodoroTime = 25 * 60; // 25分钟
+        this.pomodoroTime = 25 * 60;
         this.isPomodoroRunning = false;
         this.isBreakTime = false;
-        this.breakTime = 5 * 60; // 5分钟休息
+        this.breakTime = 5 * 60;
         this.pomodoroSessions = parseInt(localStorage.getItem('pomodoroSessions')) || 0;
         this.motivationalQuotes = [
             "每一步都是进步，每一刻都在成长！",
@@ -29,18 +62,45 @@ class LearningHero {
             "每一次学习都是对自己的投资！"
         ];
         
+        // 游戏数据定义
+        this.gameData = {
+            equipmentList: [
+                { id: 'sword_wooden', name: '木剑', type: 'weapon', effect: '经验值+10%', unlock: 'level_5' },
+                { id: 'sword_steel', name: '钢剑', type: 'weapon', effect: '经验值+25%', unlock: 'level_15' },
+                { id: 'sword_magic', name: '魔法剑', type: 'weapon', effect: '经验值+50%', unlock: 'level_30' },
+                { id: 'armor_leather', name: '皮甲', type: 'armor', effect: '任务失败保护', unlock: 'level_8' },
+                { id: 'armor_chain', name: '锁甲', type: 'armor', effect: '连击奖励+20%', unlock: 'level_20' },
+                { id: 'ring_focus', name: '专注戒指', type: 'accessory', effect: '番茄钟效率+15%', unlock: 'skill_focus_10' }
+            ],
+            achievementList: [
+                { id: 'first_task', name: '初出茅庐', desc: '完成第一个任务', reward: 'exp:50', icon: '🌟' },
+                { id: 'streak_7', name: '七日修行', desc: '连续学习7天', reward: 'exp:200,equipment:ring_focus', icon: '🔥' },
+                { id: 'task_master', name: '任务大师', desc: '完成100个任务', reward: 'exp:1000,equipment:sword_magic', icon: '⚔️' },
+                { id: 'pomodoro_ninja', name: '番茄忍者', desc: '完成50个番茄钟', reward: 'exp:500,skill:focus+5', icon: '🍅' },
+                { id: 'knowledge_seeker', name: '求知者', desc: '学习技能达到10级', reward: 'exp:800', icon: '📚' }
+            ]
+        };
+        
         this.taskHoverHandler = () => this.playSound('hover');
         this.init();
     }
 
+    // 计算升级所需经验值
+    calculateExpToNext(level) {
+        return Math.floor(100 * Math.pow(1.5, level - 1));
+    }
+
     init() {
         this.updateStats();
+        this.updateCharacterDisplay();
+        this.updateAchievementsList();
         this.refreshQuote();
         this.loadTasks();
         this.setupEventListeners();
         this.checkStreak();
         this.setupSoundEffects();
         this.createBackgroundParticles();
+        this.checkAchievements();
     }
 
     setupEventListeners() {
@@ -298,7 +358,7 @@ class LearningHero {
         `;
     }
 
-    // 切换任务状态
+    // 切换任务状态 - 重构版本
     toggleTask(groupId, taskId) {
         const group = this.tasks.find(g => g.id === groupId);
         const task = group.tasks.find(t => t.id === taskId);
@@ -317,20 +377,27 @@ class LearningHero {
         }
         
         task.completed = true;
-        this.totalPoints += task.points;
         this.completedTasksCount++;
+        
+        // 智能技能点分配
+        this.awardSkillPoints(task, group);
         
         // 播放成功音效
         this.playSound('success');
         
         // 创建庆祝粒子效果
-        this.createCelebrationParticles();
+        this.createTaskCompleteEffect(taskElement);
         
         // 动画更新统计数据
         this.animateStatUpdate();
         
-        // 显示成就弹窗
-        this.showAchievement(task.text, task.points);
+        // 显示成就弹窗 - 包含技能提升信息
+        const skillGained = this.getSkillGainedFromTask(task, group);
+        const achievementText = skillGained ? 
+            `${task.text}\n+${skillGained.skill} 技能` : 
+            task.text;
+        
+        this.showAchievement(achievementText, task.points);
         
         // 更新连击数
         this.updateStreak();
@@ -346,16 +413,190 @@ class LearningHero {
         if (completedTasks === group.tasks.length) {
             setTimeout(() => {
                 this.createFireworks();
-                this.showAchievement(`🎉 恭喜完成任务组：${group.title}`, 50);
-                this.totalPoints += 50;
-                this.saveStats();
-                this.updateStats();
-                this.playSound('levelup');
+                this.showGroupCompleteReward(group);
             }, 1000);
         }
         
         // 更新连续学习天数
         this.updateStreak();
+    }
+    
+    // 智能技能点分配
+    awardSkillPoints(task, group) {
+        const taskText = (task.text + ' ' + group.title).toLowerCase();
+        let skillsGained = {};
+        
+        // 基于任务内容的智能分析
+        if (taskText.includes('阅读') || taskText.includes('看书') || taskText.includes('学习') || taskText.includes('理解')) {
+            skillsGained.knowledge = 1;
+        }
+        
+        if (taskText.includes('练习') || taskText.includes('做题') || taskText.includes('实践') || taskText.includes('应用')) {
+            skillsGained.focus = 1;
+        }
+        
+        if (taskText.includes('创作') || taskText.includes('设计') || taskText.includes('写作') || taskText.includes('创新')) {
+            skillsGained.creativity = 1;
+        }
+        
+        if (taskText.includes('坚持') || taskText.includes('连续') || taskText.includes('每天') || taskText.includes('规律')) {
+            skillsGained.endurance = 1;
+        }
+        
+        // 如果没有匹配到特定技能，随机奖励一个技能点
+        if (Object.keys(skillsGained).length === 0) {
+            const skills = ['focus', 'endurance', 'knowledge', 'creativity'];
+            const randomSkill = skills[Math.floor(Math.random() * skills.length)];
+            skillsGained[randomSkill] = 1;
+        }
+        
+        // 应用技能点
+        Object.keys(skillsGained).forEach(skill => {
+            this.skills[skill] += skillsGained[skill];
+            this.showSkillGainEffect(skill, skillsGained[skill]);
+        });
+        
+        task.skillsGained = skillsGained; // 记录获得的技能
+    }
+    
+    // 获取任务获得的技能信息
+    getSkillGainedFromTask(task, group) {
+        if (task.skillsGained) {
+            const skillNames = {
+                focus: '专注',
+                endurance: '耐力', 
+                knowledge: '知识',
+                creativity: '创造'
+            };
+            
+            const skills = Object.keys(task.skillsGained).map(skill => 
+                `${skillNames[skill]} +${task.skillsGained[skill]}`
+            ).join(', ');
+            
+            return { skill: skills };
+        }
+        return null;
+    }
+    
+    // 显示技能获得特效
+    showSkillGainEffect(skillType, amount) {
+        const skillIcons = {
+            focus: '🎯',
+            endurance: '💪',
+            knowledge: '🧠',
+            creativity: '✨'
+        };
+        
+        const skillNames = {
+            focus: '专注',
+            endurance: '耐力',
+            knowledge: '知识',
+            creativity: '创造'
+        };
+        
+        const effect = document.createElement('div');
+        effect.className = 'skill-gain-effect';
+        effect.innerHTML = `
+            <div class="skill-icon">${skillIcons[skillType]}</div>
+            <div class="skill-gain-text">+${amount} ${skillNames[skillType]}</div>
+        `;
+        
+        effect.style.cssText = `
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            z-index: 10000;
+            pointer-events: none;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            opacity: 0;
+            animation: skillGainFloat 2s ease-out forwards;
+        `;
+        
+        document.body.appendChild(effect);
+        
+        setTimeout(() => effect.remove(), 2000);
+    }
+    
+    // 创建任务完成特效
+    createTaskCompleteEffect(taskElement) {
+        if (!taskElement) return;
+        
+        // 创建经验值飞行效果
+        const expOrb = document.createElement('div');
+        expOrb.className = 'exp-orb';
+        expOrb.textContent = '+EXP';
+        
+        const rect = taskElement.getBoundingClientRect();
+        expOrb.style.cssText = `
+            position: fixed;
+            left: ${rect.left + rect.width/2}px;
+            top: ${rect.top + rect.height/2}px;
+            background: linear-gradient(45deg, #ffd700, #ffed4a);
+            color: #333;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 10000;
+            pointer-events: none;
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.5);
+            animation: expFly 1.5s ease-out forwards;
+        `;
+        
+        document.body.appendChild(expOrb);
+        setTimeout(() => expOrb.remove(), 1500);
+        
+        // 原有的庆祝粒子效果
+        this.createCelebrationParticles();
+    }
+    
+    // 显示任务组完成奖励
+    showGroupCompleteReward(group) {
+        // 任务组完成额外奖励
+        const bonusExp = 50;
+        const bonusSkillPoints = 2;
+        
+        // 随机提升一个技能
+        const skills = ['focus', 'endurance', 'knowledge', 'creativity'];
+        const randomSkill = skills[Math.floor(Math.random() * skills.length)];
+        this.skills[randomSkill] += bonusSkillPoints;
+        
+        this.createFireworks();
+        this.showAchievement(`🎉 任务组完成：${group.title}\n+${bonusSkillPoints} ${randomSkill} 技能点`, bonusExp);
+        this.playSound('levelup');
+        
+        // 显示特殊完成特效
+        this.createGroupCompleteEffect();
+    }
+    
+    // 任务组完成特效
+    createGroupCompleteEffect() {
+        const effect = document.createElement('div');
+        effect.className = 'group-complete-effect';
+        effect.innerHTML = `
+            <div class="complete-text">MISSION COMPLETE!</div>
+            <div class="complete-subtitle">任务组完成</div>
+        `;
+        
+        effect.style.cssText = `
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            z-index: 10000;
+            text-align: center;
+            pointer-events: none;
+            animation: groupCompleteShow 3s ease-out forwards;
+        `;
+        
+        document.body.appendChild(effect);
+        setTimeout(() => effect.remove(), 3000);
     }
 
     // 动画更新统计数据
@@ -543,6 +784,113 @@ class LearningHero {
         document.getElementById('totalPoints').textContent = this.totalPoints;
         document.getElementById('streak').textContent = this.streak;
         document.getElementById('completedTasks').textContent = this.completedTasksCount;
+        
+        // 更新角色数据显示
+        this.updateCharacterDisplay();
+        this.saveGameData();
+    }
+    
+    // 更新角色显示
+    updateCharacterDisplay() {
+        // 更新等级和经验条
+        const levelElement = document.getElementById('heroLevel');
+        const expElement = document.getElementById('heroExp');
+        const expBarElement = document.getElementById('expBar');
+        
+        if (levelElement) levelElement.textContent = this.character.level;
+        if (expElement) expElement.textContent = `${this.character.experience}/${this.character.expToNext}`;
+        if (expBarElement) {
+            const percentage = (this.character.experience / this.character.expToNext) * 100;
+            expBarElement.style.width = `${Math.min(percentage, 100)}%`;
+        }
+        
+        // 更新技能显示
+        Object.keys(this.skills).forEach(skill => {
+            const skillElement = document.getElementById(`skill${skill.charAt(0).toUpperCase() + skill.slice(1)}`);
+            if (skillElement) skillElement.textContent = this.skills[skill];
+        });
+    }
+    
+    // 添加经验值
+    addExperience(amount) {
+        const bonusMultiplier = this.getEquipmentBonus('exp');
+        const finalAmount = Math.floor(amount * bonusMultiplier);
+        
+        this.character.experience += finalAmount;
+        this.totalPoints += finalAmount;
+        
+        // 检查升级
+        while (this.character.experience >= this.character.expToNext) {
+            this.levelUp();
+        }
+        
+        this.updateCharacterDisplay();
+    }
+    
+    // 角色升级
+    levelUp() {
+        this.character.experience -= this.character.expToNext;
+        this.character.level++;
+        this.character.expToNext = this.calculateExpToNext(this.character.level);
+        
+        // 升级奖励
+        this.character.maxHealth += 10;
+        this.character.health = this.character.maxHealth;
+        this.character.maxMana += 5;
+        this.character.mana = this.character.maxMana;
+        
+        // 显示升级通知
+        this.showLevelUpNotification();
+        
+        // 解锁新装备和技能
+        this.checkUnlocks();
+    }
+    
+    // 显示升级通知
+    showLevelUpNotification() {
+        this.showAchievement(`恭喜！等级提升到 ${this.character.level} 级！`, 0, 'level');
+        this.createLevelUpEffect();
+    }
+    
+    // 获取装备加成
+    getEquipmentBonus(type) {
+        let bonus = 1.0;
+        
+        Object.values(this.equipment).forEach(equipId => {
+            if (equipId) {
+                const equip = this.gameData.equipmentList.find(e => e.id === equipId);
+                if (equip && equip.effect.includes(type)) {
+                    const match = equip.effect.match(/(\d+)%/);
+                    if (match) {
+                        bonus += parseInt(match[1]) / 100;
+                    }
+                }
+            }
+        });
+        
+        return bonus;
+    }
+    
+    // 保存游戏数据
+    saveGameData() {
+        localStorage.setItem('heroLevel', this.character.level);
+        localStorage.setItem('heroExp', this.character.experience);
+        localStorage.setItem('heroAvatar', this.character.avatar);
+        
+        Object.keys(this.skills).forEach(skill => {
+            localStorage.setItem(`skill${skill.charAt(0).toUpperCase() + skill.slice(1)}`, this.skills[skill]);
+        });
+        
+        Object.keys(this.equipment).forEach(type => {
+            localStorage.setItem(`equip${type.charAt(0).toUpperCase() + type.slice(1)}`, this.equipment[type] || '');
+        });
+        
+        localStorage.setItem('achievements', JSON.stringify(this.achievements));
+        localStorage.setItem('badges', JSON.stringify(this.badges));
+        localStorage.setItem('totalPoints', this.totalPoints);
+        localStorage.setItem('streak', this.streak);
+        localStorage.setItem('completedTasksCount', this.completedTasksCount);
+        localStorage.setItem('pomodoroSessions', this.pomodoroSessions);
     }
 
     // 更新连续学习天数
@@ -598,13 +946,27 @@ class LearningHero {
         this.playSound('refresh');
     }
 
-    // 显示成就弹窗
-    showAchievement(title, points) {
+    // 显示成就弹窗 - 重构版本
+    showAchievement(title, points, type = 'task') {
         const modal = document.getElementById('achievementModal');
-        document.getElementById('achievementTitle').textContent = '任务完成！';
+        if (!modal) return;
+        
+        // 防止界面闪烁
+        modal.style.display = 'flex';
+        modal.style.opacity = '0';
+        
+        // 设置内容
+        document.getElementById('achievementTitle').textContent = type === 'level' ? '等级提升！' : '任务完成！';
         document.getElementById('achievementMessage').textContent = title;
         
-        modal.classList.add('show');
+        // 添加到角色经验值
+        this.addExperience(points);
+        
+        // 显示模态框
+        requestAnimationFrame(() => {
+            modal.classList.add('show');
+            modal.style.opacity = '1';
+        });
         
         // 动画显示点数
         this.animatePoints(points);
@@ -612,6 +974,12 @@ class LearningHero {
         // 创建烟花效果和庆祝粒子
         this.createFireworks();
         this.createCelebrationParticles();
+        
+        // 播放成就音效
+        this.playSound('achievement');
+        
+        // 检查是否达成新成就
+        setTimeout(() => this.checkAchievements(), 500);
     }
 
     // 动画显示点数
@@ -642,23 +1010,238 @@ class LearningHero {
         animate();
     }
 
-    // 关闭成就弹窗
-    closeAchievement() {
-        const modal = document.getElementById('achievementModal');
-        modal.classList.remove('show');
-        this.playSound('success');
+    // 检查成就系统
+    checkAchievements() {
+        this.gameData.achievementList.forEach(achievement => {
+            if (this.achievements[achievement.id]) return; // 已获得
+            
+            let unlocked = false;
+            
+            switch (achievement.id) {
+                case 'first_task':
+                    unlocked = this.completedTasksCount >= 1;
+                    break;
+                case 'streak_7':
+                    unlocked = this.streak >= 7;
+                    break;
+                case 'task_master':
+                    unlocked = this.completedTasksCount >= 100;
+                    break;
+                case 'pomodoro_ninja':
+                    unlocked = this.pomodoroSessions >= 50;
+                    break;
+                case 'knowledge_seeker':
+                    unlocked = Object.values(this.skills).some(skill => skill >= 10);
+                    break;
+            }
+            
+            if (unlocked) {
+                this.unlockAchievement(achievement);
+            }
+        });
+    }
+    
+    // 解锁成就
+    unlockAchievement(achievement) {
+        this.achievements[achievement.id] = {
+            name: achievement.name,
+            desc: achievement.desc,
+            icon: achievement.icon,
+            unlockedAt: Date.now()
+        };
         
-        // 添加点击效果和动画
-        const button = event ? event.target : null;
-        if (button) {
-            button.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                button.style.transform = '';
-            }, 150);
+        // 处理奖励
+        if (achievement.reward) {
+            const rewards = achievement.reward.split(',');
+            rewards.forEach(reward => {
+                const [type, value] = reward.split(':');
+                if (type === 'exp') {
+                    this.addExperience(parseInt(value));
+                } else if (type === 'equipment') {
+                    this.unlockEquipment(value);
+                } else if (type === 'skill') {
+                    const [skillName, amount] = value.split('+');
+                    this.skills[skillName] += parseInt(amount);
+                }
+            });
         }
         
-        // 添加一些庆祝粒子效果
+        // 显示成就通知
+        this.showAchievementUnlock(achievement);
+    }
+    
+    // 显示成就解锁通知
+    showAchievementUnlock(achievement) {
+        const notification = document.createElement('div');
+        notification.className = 'achievement-notification';
+        notification.innerHTML = `
+            <div class="achievement-icon">${achievement.icon}</div>
+            <div class="achievement-info">
+                <div class="achievement-name">${achievement.name}</div>
+                <div class="achievement-desc">${achievement.desc}</div>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // 动画显示
+        setTimeout(() => notification.classList.add('show'), 100);
+        
+        // 3秒后移除
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 500);
+        }, 3000);
+        
+        this.playSound('achievement');
+        
+        // 更新成就列表显示
+        this.updateAchievementsList();
+    }
+    
+    // 更新成就列表显示
+    updateAchievementsList() {
+        const achievementsList = document.getElementById('achievementsList');
+        if (!achievementsList) return;
+        
+        // 清空现有内容
+        achievementsList.innerHTML = '';
+        
+        // 获取最近的3个成就
+        const recentAchievements = Object.values(this.achievements)
+            .sort((a, b) => b.unlockedAt - a.unlockedAt)
+            .slice(0, 3);
+        
+        if (recentAchievements.length === 0) {
+            achievementsList.innerHTML = '<div class="achievement-badge">🎯 开始你的冒险</div>';
+            return;
+        }
+        
+        recentAchievements.forEach(achievement => {
+            const badge = document.createElement('div');
+            badge.className = 'achievement-badge';
+            badge.innerHTML = `${achievement.icon} ${achievement.name}`;
+            badge.title = achievement.desc;
+            achievementsList.appendChild(badge);
+        });
+    }
+    
+    // 检查解锁
+    checkUnlocks() {
+        this.gameData.equipmentList.forEach(equipment => {
+            const [unlockType, unlockValue] = equipment.unlock.split('_');
+            let canUnlock = false;
+            
+            if (unlockType === 'level') {
+                canUnlock = this.character.level >= parseInt(unlockValue);
+            } else if (unlockType === 'skill') {
+                const [skillName, level] = unlockValue.split('_');
+                canUnlock = this.skills[skillName] >= parseInt(level);
+            }
+            
+            if (canUnlock && !this.hasEquipment(equipment.id)) {
+                this.unlockEquipment(equipment.id);
+            }
+        });
+    }
+    
+    // 解锁装备
+    unlockEquipment(equipmentId) {
+        const equipment = this.gameData.equipmentList.find(e => e.id === equipmentId);
+        if (equipment) {
+            this.showEquipmentUnlock(equipment);
+        }
+    }
+    
+    // 显示装备解锁通知
+    showEquipmentUnlock(equipment) {
+        const notification = document.createElement('div');
+        notification.className = 'equipment-notification';
+        notification.innerHTML = `
+            <div class="equipment-icon">⚔️</div>
+            <div class="equipment-info">
+                <div class="equipment-name">新装备解锁：${equipment.name}</div>
+                <div class="equipment-effect">${equipment.effect}</div>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => notification.classList.add('show'), 100);
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 500);
+        }, 4000);
+        
+        this.playSound('unlock');
+    }
+    
+    // 创建升级特效
+    createLevelUpEffect() {
+        const effect = document.createElement('div');
+        effect.className = 'level-up-effect';
+        effect.innerHTML = `
+            <div class="level-up-text">LEVEL UP!</div>
+            <div class="level-up-number">${this.character.level}</div>
+        `;
+        
+        document.body.appendChild(effect);
+        
+        setTimeout(() => effect.classList.add('show'), 100);
+        setTimeout(() => {
+            effect.classList.remove('show');
+            setTimeout(() => effect.remove(), 1000);
+        }, 2000);
+        
+        // 创建升级光芒效果
+        this.createLevelUpRays();
+    }
+    
+    // 创建升级光芒
+    createLevelUpRays() {
+        const rays = document.createElement('div');
+        rays.className = 'level-up-rays';
+        document.body.appendChild(rays);
+        
+        for (let i = 0; i < 8; i++) {
+            const ray = document.createElement('div');
+            ray.className = 'ray';
+            ray.style.transform = `rotate(${i * 45}deg)`;
+            rays.appendChild(ray);
+        }
+        
+        setTimeout(() => rays.remove(), 2000);
+    }
+    
+    // 检查是否拥有装备
+    hasEquipment(equipmentId) {
+        return Object.values(this.equipment).includes(equipmentId);
+    }
+
+    // 关闭成就弹窗 - 修复点击失效问题
+    closeAchievement() {
+        const modal = document.getElementById('achievementModal');
+        if (!modal) return;
+        
+        // 确保移除显示类
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        
+        this.playSound('success');
+        
+        // 添加庆祝粒子效果
         this.createCelebrationParticles();
+        
+        // 防止事件冒泡
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        // 重新聚焦到主界面
+        setTimeout(() => {
+            document.body.focus();
+        }, 100);
     }
 
     // 创建庆祝粒子效果
@@ -768,6 +1351,12 @@ class LearningHero {
                     break;
                 case 'achievement':
                     this.playAchievementSound(audioContext);
+                    break;
+                case 'unlock':
+                    this.playUnlockSound(audioContext);
+                    break;
+                case 'levelup':
+                    this.playLevelUpSound(audioContext);
                     break;
                 case 'hover':
                     this.playHoverSound(audioContext);
@@ -922,6 +1511,46 @@ class LearningHero {
                 oscillator.start(startTime);
                 oscillator.stop(startTime + 0.8);
             });
+        });
+    }
+
+    playUnlockSound(audioContext) {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // 解锁音效：神秘的音调
+        oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.5);
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.5);
+    }
+    
+    playLevelUpSound(audioContext) {
+        // 升级音效：华丽的和弦
+        const frequencies = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+        
+        frequencies.forEach((freq, index) => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+            oscillator.type = 'triangle';
+            gainNode.gain.setValueAtTime(0.08, audioContext.currentTime + index * 0.1);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1 + index * 0.1);
+            
+            oscillator.start(audioContext.currentTime + index * 0.1);
+            oscillator.stop(audioContext.currentTime + 1 + index * 0.1);
         });
     }
 
@@ -1087,6 +1716,19 @@ function setQuickTask(taskText) {
 function closeAchievement() {
     learningHero.closeAchievement();
 }
+
+// 添加新的游戏系统方法到全局作用域
+window.learningHeroMethods = {
+    checkAchievements: function() {
+        if (learningHero) learningHero.checkAchievements();
+    },
+    createLevelUpEffect: function() {
+        if (learningHero) learningHero.createLevelUpEffect();
+    },
+    checkUnlocks: function() {
+        if (learningHero) learningHero.checkUnlocks();
+    }
+};
 
 function togglePromptSection() {
     const promptCard = document.getElementById('promptCard');

@@ -1061,3 +1061,463 @@ section h2 i {
         transform: scale(1);
     }
 }
+
+/* 新增：角色系统样式 */
+.character-level {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+}
+
+.level-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.exp-bar-container {
+    position: relative;
+    width: 80px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.exp-bar {
+    height: 100%;
+    background: linear-gradient(45deg, #ffd700, #ffed4a);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    width: 0%;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.exp-text {
+    position: absolute;
+    top: -18px;
+    left: 0;
+    font-size: 0.7rem;
+    color: white;
+    opacity: 0.8;
+}
+
+/* 角色面板样式 */
+.character-panel {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.1);
+}
+
+.character-avatar {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.avatar-image {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.character-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #667eea;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.skill-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.skill-item:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+}
+
+.skill-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.skill-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.skill-name {
+    font-size: 0.9rem;
+    color: #333;
+    font-weight: 500;
+}
+
+.skill-level {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #667eea;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.achievements-preview {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.achievements-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: #667eea;
+}
+
+.achievements-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.achievement-badge {
+    background: linear-gradient(45deg, #ffd700, #ffed4a);
+    color: #333;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    animation: pulse 2s infinite;
+}
+
+/* 成就通知样式 */
+.achievement-notification,
+.equipment-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    max-width: 350px;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.5s ease;
+    z-index: 10000;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.achievement-notification.show,
+.equipment-notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.achievement-icon,
+.equipment-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.achievement-info,
+.equipment-info {
+    flex: 1;
+}
+
+.achievement-name,
+.equipment-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.achievement-desc,
+.equipment-effect {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+/* 升级特效样式 */
+.level-up-effect {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    z-index: 10000;
+    text-align: center;
+    pointer-events: none;
+    transition: all 0.8s ease;
+}
+
+.level-up-effect.show {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.level-up-text {
+    font-size: 3rem;
+    font-weight: 900;
+    color: #ffd700;
+    text-shadow: 0 0 20px #ffd700, 0 0 40px #ffd700;
+    margin-bottom: 0.5rem;
+    animation: levelUpGlow 0.8s ease-in-out;
+}
+
+.level-up-number {
+    font-size: 4rem;
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 0 20px #667eea, 0 0 40px #667eea;
+    animation: levelUpScale 0.8s ease-in-out;
+}
+
+.level-up-rays {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    height: 400px;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+.ray {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 200px;
+    background: linear-gradient(to top, transparent, #ffd700, transparent);
+    transform-origin: bottom center;
+    animation: rayPulse 2s ease-in-out;
+}
+
+@keyframes levelUpGlow {
+    0%, 100% { text-shadow: 0 0 20px #ffd700; }
+    50% { text-shadow: 0 0 40px #ffd700, 0 0 60px #ffd700; }
+}
+
+@keyframes levelUpScale {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+@keyframes rayPulse {
+    0% { opacity: 0; transform: rotate(var(--rotation)) scale(0); }
+    50% { opacity: 1; transform: rotate(var(--rotation)) scale(1); }
+    100% { opacity: 0; transform: rotate(var(--rotation)) scale(0); }
+}
+
+/* 新增动画效果 */
+@keyframes skillGainFloat {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px) scale(0.8);
+    }
+    20% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+    }
+    80% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-10px) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-30px) scale(0.8);
+    }
+}
+
+@keyframes expFly {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-50px) scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-100px) scale(0.8);
+    }
+}
+
+@keyframes groupCompleteShow {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0) rotate(-10deg);
+    }
+    30% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1) rotate(2deg);
+    }
+    60% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    }
+    90% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8) rotate(0deg);
+    }
+}
+
+/* 任务组完成特效样式 */
+.group-complete-effect .complete-text {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #00b894;
+    text-shadow: 0 0 20px #00b894, 0 0 40px #00b894;
+    margin-bottom: 0.5rem;
+    animation: levelUpGlow 1s ease-in-out infinite alternate;
+}
+
+.group-complete-effect .complete-subtitle {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #667eea;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 技能获得特效样式 */
+.skill-gain-effect {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.skill-gain-effect .skill-icon {
+    font-size: 1.2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.skill-gain-effect .skill-gain-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* 经验值球特效 */
+.exp-orb {
+    border: 2px solid #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 修复成就弹窗样式 */
+.achievement-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.achievement-modal.show {
+    display: flex !important;
+}
+
+.achievement-content button {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    margin-top: 1rem;
+}
+
+.achievement-content button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    background: linear-gradient(45deg, #5a6fd8, #6a4190);
+}
+
+.achievement-content button:active {
+    transform: translateY(0);
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+    .character-panel {
+        padding: 1rem;
+    }
+    
+    .skills-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .skill-item {
+        padding: 0.75rem;
+    }
+    
+    .character-level {
+        min-width: auto;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .exp-bar-container {
+        width: 60px;
+        height: 6px;
+    }
+    
+    .level-up-text {
+        font-size: 2rem;
+    }
+    
+    .level-up-number {
+        font-size: 2.5rem;
+    }
+    
+    .achievement-notification,
+    .equipment-notification {
+        max-width: 280px;
+        padding: 0.75rem 1rem;
+        top: 10px;
+        right: 10px;
+    }
+}
